@@ -22,6 +22,30 @@ append_param() {
 	procd_append_param command "$switch" "${_loctmp:-$default}"
 }
 
+append_bool() {
+	local section="$1"
+	local option="$2"
+	local value="$3"
+	local default="$4"
+	local _loctmp
+	config_get_bool _loctmp "$section" "$option" "$default"
+	[ "$_loctmp" = 1 ] || return 0
+	procd_append_param command "$value"
+}
+
+append_param_if_not_eq() {
+	local section="$1"
+	local option="$2"
+	local switch="$3"
+	local compare="$4"
+	local _loctmp
+	config_get _loctmp "$section" "$option"
+	[ -n "$_loctmp" ] || return 0
+	[ "$_loctmp" != "$compare" ] && {
+		procd_append_param command "$switch" "$_loctmp"
+	}
+}
+
 start_ipt2socks() {
 	local enable
 	config_get_bool enable $1 enable
@@ -33,9 +57,22 @@ start_ipt2socks() {
 	procd_set_param nice -5
 	procd_set_param limits nofile="65535 65535"
 	procd_set_param command /usr/bin/ipt2socks
-	# TODO
-	#append_param $1 local_address "-L"
-	#append_param $1 remote_address "-R"
+	append_param $1 server_addr "-s"
+	append_param $1 server_port "-p"
+	append_param $1 listen_addr4 "-b"
+	append_param $1 listen_addr6 "-B"
+	append_param $1 listen_port "-l"
+	append_param_if_not_eq $1 thread_nums "-j" "1"
+	# TODO: nofile_limit, -n
+	append_param_if_not_eq $1 udp_timeout "-o" "300"
+	append_param_if_not_eq $1 cache_size "-c" "256"
+	append_param_if_not_eq $1 buffer_size "-f" "8192"
+	# TODO: run_user, -u
+	append_bool $1 redirect "-R"
+	append_bool $1 tcp_only "-T"
+	append_bool $1 udp_only "-U"
+	append_bool $1 ipv4_only "-4"
+	append_bool $1 ipv6_only "-6"
 	procd_close_instance
 }
 
