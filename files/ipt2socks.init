@@ -59,6 +59,8 @@ start_ipt2socks() {
 	procd_set_param command /usr/bin/ipt2socks
 	append_param $1 server_addr "-s"
 	append_param $1 server_port "-p"
+	append_param $1 auth_username "-a"
+	append_param $1 auth_password "-k"
 	append_param $1 listen_addr4 "-b"
 	append_param $1 listen_addr6 "-B"
 	append_param $1 listen_port "-l"
