@@ -67,6 +67,7 @@ start_ipt2socks() {
 	append_param_if_not_eq $1 udp_timeout "-o" "300"
 	append_param_if_not_eq $1 cache_size "-c" "256"
 	append_param_if_not_eq $1 buffer_size "-f" "8192"
+	append_bool $1 graceful "-G"
 	append_bool $1 redirect "-R"
 	append_bool $1 tcp_only "-T"
 	append_bool $1 udp_only "-U"
