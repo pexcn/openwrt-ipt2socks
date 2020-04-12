@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 #
-# Copyright (C) 2019 pexcn <i@pexcn.me>
+# Copyright (C) 2019-2020 pexcn <i@pexcn.me>
 #
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
@@ -17,9 +17,9 @@ append_param() {
 	local switch="$3"
 	local default="$4"
 	local _loctmp
-	config_get _loctmp "$section" "$option"
-	[ -n "$_loctmp" -o -n "$default" ] || return 0
-	procd_append_param command "$switch" "${_loctmp:-$default}"
+	config_get _loctmp "$section" "$option" "$default"
+	[ -n "$_loctmp" ] || return 0
+	procd_append_param command "$switch" "$_loctmp"
 }
 
 append_bool() {
@@ -33,7 +33,7 @@ append_bool() {
 	procd_append_param command "$value"
 }
 
-append_param_if_not_eq() {
+append_param_if_neq() {
 	local section="$1"
 	local option="$2"
 	local switch="$3"
@@ -41,9 +41,8 @@ append_param_if_not_eq() {
 	local _loctmp
 	config_get _loctmp "$section" "$option"
 	[ -n "$_loctmp" ] || return 0
-	[ "$_loctmp" != "$compare" ] && {
-		procd_append_param command "$switch" "$_loctmp"
-	}
+	[ "$_loctmp" != "$compare" ] || return 0
+	procd_append_param command "$switch" "$_loctmp"
 }
 
 start_ipt2socks() {
@@ -64,11 +63,11 @@ start_ipt2socks() {
 	append_param $1 listen_addr4 "-b"
 	append_param $1 listen_addr6 "-B"
 	append_param $1 listen_port "-l"
-	append_param_if_not_eq $1 thread_nums "-j" "1"
-	append_param_if_not_eq $1 nofile_limit "-n" "65535"
-	append_param_if_not_eq $1 udp_timeout "-o" "300"
-	append_param_if_not_eq $1 cache_size "-c" "256"
-	append_param_if_not_eq $1 buffer_size "-f" "8192"
+	append_param_if_neq $1 thread_nums "-j" "1"
+	append_param_if_neq $1 nofile_limit "-n" "65535"
+	append_param_if_neq $1 udp_timeout "-o" "300"
+	append_param_if_neq $1 cache_size "-c" "256"
+	append_param_if_neq $1 buffer_size "-f" "8192"
 	append_bool $1 graceful "-G"
 	append_bool $1 redirect "-R"
 	append_bool $1 tcp_only "-T"
