@@ -1,0 +1,73 @@
+From a139b6fff1d02cc52d4eef13ec227f89f3ed03e3 Mon Sep 17 00:00:00 2001
+From: pexcn <i@pexcn.me>
+Date: Mon, 25 May 2020 15:19:40 +0800
+Subject: [PATCH] fix splice()
+
+---
+ Makefile    |  2 +-
+ ipt2socks.c |  1 +
+ splice.h    | 29 +++++++++++++++++++++++++++++
+ 3 files changed, 31 insertions(+), 1 deletion(-)
+ create mode 100644 splice.h
+
+diff --git a/Makefile b/Makefile
+index eeeacf6..cc057aa 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,5 +1,5 @@
+ CC = gcc
+-CFLAGS = -std=c99 -Wall -Wextra -O3 -pthread
++CFLAGS = -std=c99 -Wall -Wextra -O3 -pthread -D __MUSL__
+ LIBS = -lm
+ SRCS = ipt2socks.c logutils.c lrucache.c netutils.c protocol.c
+ OBJS = $(SRCS:.c=.o)
+diff --git a/ipt2socks.c b/ipt2socks.c
+index a45c3e3..dea3b3a 100644
+--- a/ipt2socks.c
++++ b/ipt2socks.c
+@@ -3,6 +3,7 @@
+ #include "lrucache.h"
+ #include "netutils.h"
+ #include "protocol.h"
++#include "splice.h"
+ #include "libev/ev.h"
+ #include <stddef.h>
+ #include <stdint.h>
+diff --git a/splice.h b/splice.h
+new file mode 100644
+index 0000000..10f7933
+--- /dev/null
++++ b/splice.h
+@@ -0,0 +1,29 @@
++#ifdef __MUSL__
++#include <unistd.h>
++#include <sys/syscall.h>
++
++ssize_t splice(int __fdin, __off64_t *__offin, int __fdout,
++        __off64_t *__offout, size_t __len, unsigned int __flags) {
++#ifdef __NR_splice
++	return syscall(__NR_splice, __fdin, __offin, __fdout, __offout, __len, __flags);
++#else
++	(void)__fdin;
++	(void)__offin;
++	(void)__fdout;
++	(void)__offout;
++	(void)__len;
++	(void)__flags;
++	errno = ENOSYS;
++	return -1;
++#endif
++}
++
++#undef SPLICE_F_MOVE
++#undef SPLICE_F_NONBLOCK
++#undef SPLICE_F_MORE
++
++#define SPLICE_F_MOVE 1
++#define SPLICE_F_NONBLOCK 2
++#define SPLICE_F_MORE 4
++
++#endif /* __MUSL__ */
+-- 
+2.26.0
+
