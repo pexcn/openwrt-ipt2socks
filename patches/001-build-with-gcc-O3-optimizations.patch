@@ -16,7 +16,7 @@ index 06cb6de..eeeacf6 100644
 -CFLAGS = -std=c99 -Wall -Wextra -O2 -pthread
 +CFLAGS = -std=c99 -Wall -Wextra -O3 -pthread
  LIBS = -lm
- SRCS = ipt2socks.c logutils.c lrucache.c netutils.c protocol.c
+ SRCS = ipt2socks.c lrucache.c netutils.c protocol.c
  OBJS = $(SRCS:.c=.o)
  MAIN = ipt2socks
  DESTDIR = /usr/local/bin

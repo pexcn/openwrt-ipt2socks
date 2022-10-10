@@ -1,12 +1,12 @@
 #!/bin/sh /etc/rc.common
 #
-# Copyright (C) 2019-2020 pexcn <i@pexcn.me>
+# Copyright (C) 2019-2022 pexcn <i@pexcn.me>
 #
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
 #
 
-START=90
+START=99
 
 USE_PROCD=1
 #PROCD_DEBUG=1
@@ -46,7 +46,7 @@ append_param_if_neq() {
 }
 
 get_cpu_cores() {
-	grep -c ^processor /proc/cpuinfo
+	grep -c "^processor" /proc/cpuinfo
 }
 
 start_ipt2socks() {
@@ -58,13 +58,13 @@ start_ipt2socks() {
 	config_get_bool reuse_port $1 reuse_port
 	[ "$reuse_port" = 1 ] || instances=1
 
-	for i in $(seq 1 $instances)
-	do
+	for i in $(seq 1 $instances); do
 		procd_open_instance
 		procd_set_param respawn
+		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_set_param nice -5
-		procd_set_param limits nofile="65535 65535"
+		procd_set_param limits nofile="1048576 1048576"
 		procd_set_param command /usr/bin/ipt2socks
 		append_param_if_neq $1 server_addr "-s" "127.0.0.1"
 		append_param_if_neq $1 server_port "-p" "1080"
@@ -77,7 +77,8 @@ start_ipt2socks() {
 		append_param_if_neq $1 cache_size "-c" "256"
 		append_param_if_neq $1 udp_timeout "-o" "60"
 		append_param_if_neq $1 thread_nums "-j" "1"
-		append_param_if_neq $1 nofile_limit "-n" "65535"
+		append_param $1 nofile_limit "-n"
+		append_param $1 run_user "-u"
 		append_bool $1 tcp_only "-T"
 		append_bool $1 udp_only "-U"
 		append_bool $1 ipv4_only "-4"
@@ -86,6 +87,7 @@ start_ipt2socks() {
 		append_bool $1 reuse_port "-r"
 		append_bool $1 tfo_accept "-w"
 		append_bool $1 tfo_connect "-W"
+		append_bool $1 verbose "-v"
 		procd_close_instance
 	done
 }
